@@ -5,7 +5,7 @@ import speech_recognition as sr
 from google import genai
 from gtts import gTTS
 
-chaveApiGoogle = "Digite sua chave"
+chaveApiGoogle = "chave_api"
 client = genai.Client(api_key=chaveApiGoogle)
 
 def silenciar_alsa():
@@ -19,7 +19,7 @@ def falar(texto):
     print(f"Gemini falando o text: {texto}")
     tts = gTTS(text=texto, lang="pt", tld="com.br")
     tts.save("resposta.mp3")
-    os.system("mpg123 resposta.mp3 > /dev/null 2>&1")
+    os.system("mpg123 -o alsa resposta.mp3 > /dev/null 2>&1")
 
 def ouvir():
     silenciar_alsa()
@@ -36,8 +36,6 @@ def ouvir():
             comando = r.recognize_google(audio, language='pt-BR')
             print(f"Gemini entendeu: {comando}")
             return comando.lower()
-        except sr.UnknownValueError:
-            return
         except sr.RequestError:
             print("Sem conexão com rede")
             return ""
@@ -48,11 +46,11 @@ if __name__ == "__main__":
     falar("Sistema iniciado")
     while(True):
         fala_usuario = ouvir()
-        if "gemini" in fala_usuario:
-            pergunta = fala_usuario.replace("gemini", "").strip()
+        if "snake" in fala_usuario:
+            pergunta = fala_usuario.replace("snake", "").strip()
             if pergunta:
                 try:
-                    resposta = client.models.generate_content(model="gemini-1.5-flash", contents=pergunta)
+                    resposta = client.models.generate_content(model="gemini-3.5-flash", contents=pergunta)
                     falar(resposta.text)
                 except Exception as e:
                     print(f"Houve um erro na API: {e}")
