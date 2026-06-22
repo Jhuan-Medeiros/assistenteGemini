@@ -1,21 +1,12 @@
 import os
 import time
-import speech_recognition as sr
-import google.generativeai as genai
-from gtts import gTTS
 import ctypes
+import speech_recognition as sr
+from google import genai
+from gtts import gTTS
 
-chave_api = "API"
-
-genai.configure(api_key=chave_api)
-modelo = genai.GenerativeModel("gemini-1.5-flash")
-
-def fala(texto):
-    print(f"Gemini: {texto}")
-    tts = gTTS(text=texto, lang="pt", tld="com.br")
-
-    tts.save("resposta.mp3")
-    os.system("mpg123 resposta.mp3 > /dev/null 2>&1")
+chaveApiGoogle = "Digite sua chave"
+client = genai.Client(api_key=chaveApiGoogle)
 
 def silenciar_alsa():
     try:
@@ -24,34 +15,46 @@ def silenciar_alsa():
     except:
         pass
 
+def falar(texto):
+    print(f"Gemini falando o text: {texto}")
+    tts = gTTS(text=texto, lang="pt", tld="com.br")
+    tts.save("resposta.mp3")
+    os.system("mpg123 resposta.mp3 > /dev/null 2>&1")
+
 def ouvir():
     silenciar_alsa()
     r = sr.Recognizer()
+    r.dynamic_energy_threshold = False
+    r.energy_threshold = 300
+
     with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source, duration=1)
-        print("Aguardando palavra de ativação...")
+        print("Ajustando o ruido por 1 segundo")
+        print("Microfone captando, gemini disponível")
         try:
-            audio = r.listen(source, timeout=None, phrase_time_limit=7)
-            comando = r.recognize_google(audio, language="pt-BR")
+            audio = r.listen(source, timeout=None, phrase_time_limit=15)
+            print("Áudio capturado, gerando resposta")
+            comando = r.recognize_google(audio, language='pt-BR')
+            print(f"Gemini entendeu: {comando}")
             return comando.lower()
-        except Exception:
+        except sr.UnknownValueError:
+            return
+        except sr.RequestError:
+            print("Sem conexão com rede")
             return ""
-        
+        except Exception as e:
+            return ""
+    
 if __name__ == "__main__":
-    fala("Sistema de voz iniciado")
-    while True:
-        falaUsuario = ouvir()
-        if "gemini" in falaUsuario:
-            pergunta = falaUsuario
-            pergunta = falaUsuario.replace("gemini", "").strip()
+    falar("Sistema iniciado")
+    while(True):
+        fala_usuario = ouvir()
+        if "gemini" in fala_usuario:
+            pergunta = fala_usuario.replace("gemini", "").strip()
             if pergunta:
                 try:
-                    resposta = modelo.generate_content(pergunta)
-                    resposta_texto = resposta.text
-                    fala(resposta_texto)
+                    resposta = client.models.generate_content(model="gemini-1.5-flash", contents=pergunta)
+                    falar(resposta.text)
                 except Exception as e:
-                    print(f"Erro na API: {e}")
-                    fala("Houve um erro ao conectar com o servidor do Gemini.")
-                time.sleep(0.1)
-
-    
+                    print(f"Houve um erro na API: {e}")
+                    falar("Houve um erro ao conectar com o novo servidor")
+            time.sleep(0.1)
