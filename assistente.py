@@ -3,6 +3,7 @@ import time
 import speech_recognition as sr
 import google.generativeai as genai
 from gtts import gTTS
+import ctypes
 
 chave_api = "API"
 
@@ -16,7 +17,15 @@ def fala(texto):
     tts.save("resposta.mp3")
     os.system("mpg123 resposta.mp3 > /dev/null 2>&1")
 
+def silenciar_alsa():
+    try:
+        asound = ctypes.CDLL("libasound.so.2")
+        asound.snd_lib_error_set_handler(None)
+    except:
+        pass
+
 def ouvir():
+    silenciar_alsa()
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source, duration=1)
@@ -33,7 +42,7 @@ if __name__ == "__main__":
     while True:
         falaUsuario = ouvir()
         if "gemini" in falaUsuario:
-            pergunta = falaUsuario:
+            pergunta = falaUsuario
             pergunta = falaUsuario.replace("gemini", "").strip()
             if pergunta:
                 try:
